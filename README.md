@@ -314,3 +314,13 @@ ScreenDebug is meant to be:
 Use it heavily during development — and let it protect you in production.
 
 Happy debugging!
+
+---
+
+## ❤️ Support
+
+### If this project helped you, please consider supporting it:
+
+Github Sponsors: https://github.com/sponsors/Saulo-de-Souza
+
+Paypal: https://www.paypal.com/donate/?hosted_button_id=G24W4KL9ALH64
