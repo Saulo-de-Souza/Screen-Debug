@@ -1,5 +1,5 @@
 /assets export-ignore
-/acreenshots export-ignore
+/screenshots export-ignore
 .gitattributes export-ignore
 .gitignore export-ignore
 gp.bat export-ignore
