@@ -1,326 +1,175 @@
-# ScreenDebug
+# ScreenDebug Plugin for Godot 4.5
 
-A lightweight **runtime debug overlay** for Godot 4 that allows developers to **inspect properties** and **invoke safe methods** directly from the Inspector — without writing custom debug UI every time.
+![ScreenDebug Icon](res://addons/screen_debug/icon.svg)
 
-Designed to be **editor-friendly**, **safe for development**, and **self-disabling in release builds**.
+## Overview
 
----
+**ScreenDebug** is a professional runtime debug overlay for Godot 4.5 that allows developers to inspect node properties, call methods, and visualize real-time values directly on the screen. It is designed to help both debugging and learning the Godot engine by showing the effects of property changes instantly.
+
+The plugin supports complex expressions including method calls, array and dictionary access, vector calculations, and chained expressions. It's particularly useful for character debugging, physics testing, and understanding how nodes interact in your scene.
 
 ## Features
 
-- Display live values of properties (including nested ones like `velocity.x`)
-- Call methods with **typed parameters** directly from the Inspector
-- Supports multiple data types (int, float, bool, vectors, strings)
-- Customizable font, colors, background, spacing, and layout
-- Automatic formatting for floats and vectors
-- Safe method execution with a configurable blocklist
-- Automatically disables itself in **non-debug (release) builds** and warns the developer
-
----
+- Real-time display of node properties and method results.
+- Supports arrays, dictionaries, vectors, and transform types.
+- Safe method filtering (prevents unsafe operations like `queue_free`).
+- Customizable appearance: font size, colors, background size, padding, and opacity.
+- Quick expressions for commonly used debug values.
+- Ideal for learning the engine: type expressions in the Inspector and see the result visually.
 
 ## Installation
 
-1. Copy the `screen_debug` folder into:
-   ```
-   res://addons/
-   ```
-2. Enable the plugin in:
-   **Project → Project Settings → Plugins**
-3. Add **ScreenDebug** as a node in your scene.
+1. Copy the `addons/screen_debug/` folder into your Godot project.
+2. Enable the plugin in `Project Settings -> Plugins -> ScreenDebug`.
+3. Add a `ScreenDebug` node to your scene.
 
----
+## Setup
 
-## Core Concept
+1. Assign a **target node** to inspect in the `debug_target` export.
+2. Toggle `debug_active` to show or hide the overlay.
+3. Use `quick_expressions` for short debug values and `expressions` for longer or more complex expressions.
 
-ScreenDebug works by defining **what to inspect** and **what to call** using dictionaries in the Inspector.
+## Inspector Configuration Examples
 
-- **Properties** → Read-only inspection
-- **Methods** → Safe method calls with parameters
+Assume we have a **CharacterBody3D** node called `Player` with properties:
 
-All configuration is done visually — no code changes required.
+- `position` (Vector3)
+- `velocity` (Vector3)
+- `health` (float)
+- `inventory` (Array of Items)
+- `equipment` (Dictionary with keys like `Weapon`, `Armor`)
 
----
-
-## Target Node
-
-Set **`debug_target`** to the node you want to inspect.
-
-Example:
-
-- Player
-- CharacterBody2D / CharacterBody3D
-- Any custom Node
-
----
-
-## Property Inspection
-
-### Basic Property
-
-```text
-health
-```
-
-Inspector setup:
-
-```text
-Properties:
-  Health → health
-```
-
-Output:
-
-```text
-Health: 100
-```
-
----
-
-### Nested Properties (using `/` or `:` semantics)
-
-You can inspect **sub-properties** using Godot's indexed access.
-
-```text
-velocity:x
-velocity:y
-```
-
-Inspector setup:
-
-```text
-Speed X → velocity:x
-Speed Y → velocity:y
-```
-
-Output:
-
-```text
-Speed X: 120.00
-Speed Y: -35.50
-```
-
-Works with:
-
-- `Vector2`
-- `Vector3`
-- `Vector4`
-
----
-
-### Examples
-
-```text
-position:x
-position:y
-transform:origin
-scale
-rotation
-```
-
----
-
-## Example Script (Target Node)
+### Quick Expressions
 
 ```gdscript
-extends Node
-
-func get_player_name() -> String:
-    return "DebugHero"
-
-func get_score() -> int:
-    return 2450
-
-func is_alive() -> bool:
-    return true
-
-func get_spawn_point() -> Vector2:
-    return Vector2(15.25, 42.8)
-
-func multiply(a: int, b: int) -> int:
-    return a * b
-
-func format_label(text: String, size: int) -> String:
-    return "%s (%d)" % [text, size]
+quick_expressions = {
+    "Health": "health",
+    "Position": "position",
+    "Velocity": "velocity",
+    "Speed": "velocity.length()",
+    "Forward Distance": "position.distance_to(Vector3:10,0,5)",
+    "Direction to Target": "position.direction_to(get_node('Target').position)"
+}
 ```
 
----
-
-## Calling Methods — No Parameters
-
-Inspector:
-
-```text
-Player Name → get_player_name
-Score → get_score
-Alive → is_alive
-```
-
-Output:
-
-```text
-Player Name: DebugHero
-Score: 2450
-Alive: true
-```
-
----
-
-## Calling Methods — One Parameter
-
-Syntax:
-
-```text
-method/Type:value
-```
-
-Inspector:
-
-```text
-Label Test → format_label/String:Jump/int:0
-```
-
-Output:
-
-```text
-Label Test: Jump (0)
-```
-
----
-
-## Calling Methods — Two Parameters
-
-Inspector:
-
-```text
-Multiply Test → multiply/int:6/int:7
-```
-
-Output:
-
-```text
-Multiply Test: 42
-```
-
----
-
-## Calling Methods — Vector Parameters
-
-Passing vectors:
-
-```text
-Vector Example → some_method/Vector2:15.5,19.25
-```
-
-Supported vector formats:
-
-```text
-Vector2:x,y
-Vector3:x,y,z
-Vector4:x,y,z,w
-```
-
----
-
-![screen 1](screenshots/is_on_floor_method.gif)
-
-![screen 2](screenshots/position_y_prop.gif)
-
-![screen 3](screenshots/vector4_method.gif)
-
----
-
-## Supported Parameter Types
-
-| Type    | Syntax Example             |
-| ------- | -------------------------- |
-| String  | `String:jump`              |
-| int     | `int:10`                   |
-| float   | `float:0.75`               |
-| bool    | `bool:true` / `bool:false` |
-| Vector2 | `Vector2:10,20`            |
-| Vector3 | `Vector3:1,2,3`            |
-| Vector4 | `Vector4:1,2,3,4`          |
-
----
-
-## Float & Vector Formatting
-
-You can control numeric formatting via:
-
-- `floats_decimal_places`
-- `floats_vector_places`
-
-Example:
-
-```text
-Vector2(15.33, 19.00)
-```
-
----
-
-## Method Safety
-
-Blocked by default:
+### Expressions (Longer Examples)
 
 ```gdscript
-queue_free
-add_child
-set_process
-move_and_slide
+expressions = [
+    ScreenDebugExpression.new("First Child Name", "get_children()[0].name"),
+    ScreenDebugExpression.new("Weapon Damage", "get_node('Weapon').damage"),
+    ScreenDebugExpression.new("Dot Product Velocity", "velocity.dot(Vector3:1,0,0)"),
+    ScreenDebugExpression.new("Inventory First Item", "inventory[0].name"),
+    ScreenDebugExpression.new("Armor Defense", "equipment.get('Armor').defense"),
+    ScreenDebugExpression.new("Distance To Target", "get_node('Target').position.distance_to(position)"),
+    ScreenDebugExpression.new("Direction To Target", "position.direction_to(get_node('Target').position)"),
+]
 ```
 
-You can extend or customize this list using:
+### Dictionary Access
 
 ```gdscript
-not_allowed_methods
+# Access by key
+equipment.get('Weapon')
+
+# Access by array-like index
+equipment['Weapon']
 ```
 
----
+### Array Access
 
-## Release Build Protection
+```gdscript
+# First child of the node
+get_children()[0]
 
-In **non-debug builds**, ScreenDebug:
-
-- Disables `_process` and `_physics_process`
-- Hides itself automatically
-- Logs a warning:
-
-```text
-ScreenDebug detected in RELEASE build. Remove it before publishing the game.
+# Access the 3rd inventory item
+inventory[2]
 ```
 
-This prevents accidental shipping of debug tools.
+### Vector Methods
+
+```gdscript
+velocity.length()        # Returns speed
+velocity.normalized()    # Returns unit vector
+velocity.dot(Vector3:1,0,0)
+velocity.cross(Vector3:0,1,0)
+velocity.distance_to(Vector3:5,0,0)
+velocity.angle_to(Vector3:0,0,1)
+position.direction_to(get_node('Target').position)
+```
+
+### Transform3D / Basis Access
+
+```gdscript
+transform.origin
+transform.basis
+transform.basis.x
+transform.basis.y
+transform.basis.z
+```
+
+### Chained Expressions
+
+```gdscript
+# Access a child weapon's damage
+get_children()[0].get_node('Weapon').damage
+
+# Access first inventory item's name
+get_children()[0].inventory[0].name
+```
+
+## Appearance Customization
+
+```gdscript
+# Font sizes
+debug_font_size = 24
+
+# Line spacing
+debug_line_spacing = 5
+
+# Outline thickness
+debug_font_outline = 1
+
+# Colors
+debug_default_font_color = Color.white
+debug_key_font_color = Color.orange
+debug_value_font_color = Color.yellow
+
+# Background panel
+debug_background_color = Color.black
+debug_background_opacity = 0.3
+debug_background_size = Vector2(600, 400)
+debug_background_position = Vector2(20, 20)
+debug_background_padding = 20
+```
+
+## Safety
+
+Some methods are blocked to prevent accidental modification or deletion of your nodes at runtime:
+
+- `queue_free`
+- `add_child`
+- `set_process`
+- `add_to_group`
+- `move_and_slide`
+
+## Advantages for Learning Godot
+
+ScreenDebug is not only a debugging tool but also an **educational resource**:
+
+- Type expressions in the Inspector and see their results live.
+- Learn Godot node hierarchy, properties, and methods interactively.
+- Understand vectors, transforms, arrays, and dictionaries by observing changes in real-time.
+- Test method calls safely and instantly.
+
+## Recommended Workflow
+
+1. Add a `ScreenDebug` node to your scene.
+2. Assign your player or main node to `debug_target`.
+3. Fill `quick_expressions` with common checks (health, position, speed).
+4. Use `expressions` for more advanced, chained, or vector calculations.
+5. Observe results in-game to learn how nodes interact.
 
 ---
 
-## Recommended Use Cases
-
-- Debugging player state
-- AI inspection
-- Physics values visualization
-- Rapid iteration during gameplay tuning
-- QA & testing builds
-
----
-
-## Final Notes
-
-ScreenDebug is meant to be:
-
-- **Non-intrusive**
-- **Safe by default**
-- **Extremely flexible**
-
-Use it heavily during development — and let it protect you in production.
-
-Happy debugging!
-
----
-
-## ❤️ Support
-
-### If this project helped you, please consider supporting it:
-
-Github Sponsors: https://github.com/sponsors/Saulo-de-Souza
-
-Paypal: https://www.paypal.com/donate/?hosted_button_id=G24W4KL9ALH64
+**ScreenDebug** is the ultimate runtime debug and learning tool for Godot 4.5 developers.

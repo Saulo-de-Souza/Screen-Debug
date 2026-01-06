@@ -129,27 +129,88 @@ class_name ScreenDebug extends CanvasLayer
 @export_range(0.05, 2.0, 0.05) var update_interval := 0.2
 
 ## List of methods that are blocked from execution for safety.
-@export var not_allowed_methods: PackedStringArray = ["queue_free", "add_child", "set_process", "move_and_slide"]
-
-## Dictionary mapping labels to property paths.
-@export var properties: Dictionary[String, String]
-
-## Dictionary mapping labels to method calls.
-@export var methods: Dictionary[String, String]
-#endregion
+@export var not_allowed_methods: PackedStringArray = ["queue_free", "add_child", "set_process", "add_to_group", "move_and_slide"]
 
 
-#region CONSTANTS
-const PARAM_FORMAT_HINT := """
-Param format:
-String:value
-int:10
-float:0.5
-bool:true
-Vector2:x,y
-Vector3:x,y,z
-Vector4:x,y,z,w
-"""
+## [b]Quick reference for writing expressions in the Inspector[/b][br]
+## [br]
+## Each expression operates on the node assigned in [code]debug_target[/code].[br]
+## You can access:[br]
+## [br]
+## • Node properties: e.g., [code]"position"[/code], [code]"name"[/code], [code]"health"[/code][br][br]
+## • Node methods: e.g., [code]"get_parent()"[/code], [code]"get_children()[0]"[/code],  [code]"get_children()[0].name"[/code][br][br]
+## • Arrays: index access or properties like [code]size[/code]/[code]length[/code] e.g., [code]"get_children().size", "get_children().length"[/code][br][br]
+## • Dictionaries: key access or using [code]get("key")[/code] e.g., [code]dictionary[key], dictionary.get(String:key)[/code][br][br]
+## • Vectors ([code]Vector2[/code]/[code]Vector3[/code]/[code]Vector4[/code]): components ([code]x[/code], [code]y[/code], [code]z[/code], [code]w[/code]), methods like [code].length()[/code], [code].dot()[/code], [code].cross()[/code], [code].angle_to()[/code][br][br]
+## • Transform3D / Basis: access [code]origin[/code], [code]basis[/code], and [code]basis.x/y/z[/code][br][br]
+## [br]
+## [b]Syntax examples for Inspector input[/b]:[br]
+## [br]
+## [b]--- Node Properties ---[/b][br]
+## [code]"health"[/code][br]
+## [code]"position"[/code][br]
+## [code]"velocity"[/code][br]
+##[br]
+## [b]--- Methods (no arguments) ---[/b][br]
+## [code]"get_parent()"[/code][br]
+## [code]"is_visible()"[/code][br]
+##[br]
+## [b]--- Methods (with arguments) ---[/b][br]
+## [code]"get_node(String:Player)"[/code][br]
+## [code]"distance_to(Vector3:1,2,3)"[/code][br]
+## [code]"dot(Vector3:1,0,0)"[/code][br]
+##[br]
+## [b]--- Arrays ---[/b][br]
+## [code]"children[0]"[/code]             - first child[br]
+## [code]"inventory[2]"[/code]            - third item[br]
+## [code]"inventory.size"[/code]           - length of the array[br]
+##[br]
+## [b]--- Dictionaries ---[/b][br]
+## [code]"my_dict['key']"[/code][br]
+## [code]"my_dict.get(String:my_key)"[/code][br]
+##[br]
+## [b]--- Chained Expressions ---[/b][br]
+## [code]"get_parent().position"[/code][br]
+## [code]"get_node('Enemy').health"[/code][br]
+## [code]"children[0].name"[/code][br]
+## [code]"get_children()[0].get_node('Weapon').damage"[/code][br]
+##[br]
+## [b]--- Vectors ---[/b][br]
+## [code]"velocity.x"[/code], [code]"velocity.y"[/code], [code]"velocity.z"[/code][br]
+## [code]"velocity.length"[/code][br]
+## [code]"velocity.normalized"[/code][br]
+## [code]"velocity.dot(Vector3:1,0,0)"[/code][br]
+## [code]"velocity.cross(Vector3:0,1,0)"[/code][br]
+## [code]"velocity.angle_to(Vector3:0,0,1)"[/code][br]
+##[br]
+## [b]--- Transform3D / Basis ---[/b][br]
+## [code]"transform.origin"[/code][br]
+## [code]"transform.basis"[/code][br]
+## [code]"transform.basis.x"[/code], [code]"transform.basis.y"[/code], [code]"transform.basis.z"[/code][br]
+##[br]
+## [b]--- Important Notes ---[/b][br]
+## - Unsafe methods such as [code]"queue_free"[/code], [code]"add_child"[/code], [code]"set_process"[/code], [code]"move_and_slide"[/code] are blocked.[br]
+## - Method arguments can use type prefixes:[br]
+##   - String: [code]"String:Hello"[/code][br]
+##   - Int:    [code]"int:42"[/code][br]
+##   - Float:  [code]"float:3.14"[/code][br]
+##   - Bool:   [code]"bool:true"[/code] / [code]"bool:false"[/code][br]
+##   - Vector2: [code]"Vector2:1,2"[/code][br]
+##   - Vector3: [code]"Vector3:1,2,3"[/code][br]
+##   - Vector4: [code]"Vector4:1,2,3,4"[/code][br]
+## - Use [code]quick_expressions[/code] for short, common expressions.[br]
+## - Use [code]expressions[/code] array for long or complex expressions, as it provides a larger editor in the Inspector.[br]
+@export var quick_expressions: Dictionary[String, String]
+
+
+@export var expressions: Array[ScreenDebugExpression]:
+	set(value):
+		expressions = value
+		if not is_node_ready(): return
+		for exp in expressions:
+			if exp:
+				exp._init_owner(self)
+
 #endregion
 
 
@@ -181,109 +242,28 @@ func _ready() -> void:
 
 
 func _process(delta):
-	if is_development():
+	if _is_development():
 		return
 	_accum += delta
 	if _accum < update_interval:
 		return
 	_accum = 0.0
-
+	
 	_update_debug()
 #endregion
 
 
 #region INTERNAL EXECUTION
-func _execute_method(key: String, raw: String, debug_target: Node) -> String:
-	var div := raw.split("/")
-	var method := div[0]
-
-	if not_allowed_methods.size() > 0 and not_allowed_methods.has(method):
-		push_warning("Method not allowed: %s" % method)
-		return ""
-
-
-	if not debug_target.has_method(method):
-		push_warning("Method (%s) not found." % method)
-		return ""
-
-	var args: Array = []
-
-	for i in range(1, div.size()):
-		var param := _parse_param(div[i])
-		if param == null:
-			push_warning("Invalid param in (%s)\n%s" % [raw, PARAM_FORMAT_HINT])
-
-			return ""
-		args.append(param)
-
-	var callable := Callable(debug_target, method)
-	if not callable.is_valid():
-		push_warning("Callable invalid: %s" % method)
-		return ""
-
-	var result := callable.callv(args)
-	var raw2: Variant = result
-	var value: String = format_value(raw2)
-	
-	if value.contains("tool mode"):
-		value = ""
-	var result_format: String = "[color=%s][b]%s[/b]:[/color] [color=%s]" + value + "[/color]\n"
-	return result_format % [debug_key_font_color.to_html(), key, debug_value_font_color.to_html()]
-
-
-func _parse_param(text: String) -> Variant:
-	text = text.strip_edges()
-
-	if text.begins_with("String:"):
-		return text.replace("String:", "")
-
-	if text.begins_with("int:"):
-		return int(text.replace("int:", ""))
-
-	if text.begins_with("float:"):
-		return float(text.replace("float:", ""))
-
-	if text.begins_with("bool:"):
-		var v := text.replace("bool:", "")
-		if v == "true":
-			return true
-		if v == "false":
-			return false
-		return null
-
-	if text.begins_with("Vector2:"):
-		var p := text.replace("Vector2:", "").split(",")
-		if p.size() != 2:
-			return null
-		return Vector2(p[0].to_float(), p[1].to_float())
-
-	if text.begins_with("Vector3:"):
-		var p := text.replace("Vector3:", "").split(",")
-		if p.size() != 3:
-			return null
-		return Vector3(p[0].to_float(), p[1].to_float(), p[2].to_float())
-
-	if text.begins_with("Vector4:"):
-		var p := text.replace("Vector4:", "").split(",")
-		if p.size() != 4:
-			return null
-		return Vector4(
-			p[0].to_float(),
-			p[1].to_float(),
-			p[2].to_float(),
-			p[3].to_float()
-		)
-
-	return null
-
-
 func _update_debug() -> void:
+	if Engine.is_editor_hint():
+		return
+
 	if not debug_active:
 		return
 
 	if not is_instance_valid(debug_target):
 		return
-		
+
 	if not is_instance_valid(_screen_debug):
 		return
 
@@ -292,27 +272,157 @@ func _update_debug() -> void:
 	if debug_title.strip_edges() != "":
 		_screen_debug.append_text("[color=%s][b]%s[/b][/color]\n" % [debug_default_font_color.to_html(), debug_title])
 
-	# Properties
-	for key in properties:
-		var prop := properties[key]
-		if prop:
-			var raw: Variant = debug_target.get_indexed(NodePath(prop))
-			var value: String = format_value(raw)
-
-			if value.contains("tool mode"):
-				value = ""
-
-			_screen_debug.append_text("[color=%s][b]%s[/b]:[/color] " % [debug_key_font_color.to_html(), key])
-			_screen_debug.append_text("[color=%s]%s[/color]" % [debug_value_font_color.to_html(), value + "\n"])
-
-	# Methods
-	for key in methods:
-		var raw := methods[key]
-		if raw:
-			_screen_debug.append_text(_execute_method(key, raw, debug_target))
+	_handle_quick_expressions()
+	_handle_expressions()
 
 
-func format_value(v: Variant) -> String:
+func _handle_quick_expressions() -> void:
+	for key in quick_expressions:
+		var expr := quick_expressions[key]
+		if not expr:
+			continue
+
+		var result := _resolve_expression(debug_target, expr)
+		if result == null:
+			continue
+
+		var value := _format_value(result)
+
+		if value.contains("tool mode"):
+			value = ""
+
+		_screen_debug.append_text(
+			"[color=%s][b]%s[/b]:[/color] [color=%s]%s[/color]\n"
+			% [
+				debug_key_font_color.to_html(),
+				key,
+				debug_value_font_color.to_html(),
+				value
+			]
+		)
+
+
+func _handle_expressions() -> void:
+	for expr_data in expressions:
+		if not expr_data:
+			continue
+
+		var key := expr_data.label
+		var expr := expr_data.expression
+
+
+		if not expr:
+			continue
+
+		var result := _resolve_expression(debug_target, expr)
+		if result == null:
+			continue
+
+		var value := _format_value(result)
+
+		if value.contains("tool mode"):
+			value = ""
+
+		_screen_debug.append_text(
+			"[color=%s][b]%s[/b]:[/color] [color=%s]%s[/color]\n"
+			% [
+				debug_key_font_color.to_html(),
+				key,
+				debug_value_font_color.to_html(),
+				value
+			]
+		)
+
+
+func _parse_param(text: String) -> Variant:
+	text = text.strip_edges()
+
+	# ======= Intercept constructors específicos =======
+	# Vector2(x,y)
+	if text.begins_with("Vector2(") and text.ends_with(")"):
+		var args = text.substr(8, text.length() - 9).split(",")
+		if args.size() == 2:
+			return Vector2(args[0].to_float(), args[1].to_float())
+		return null
+
+	# Vector3(x,y,z)
+	if text.begins_with("Vector3(") and text.ends_with(")"):
+		var args = text.substr(8, text.length() - 9).split(",")
+		if args.size() == 3:
+			return Vector3(args[0].to_float(), args[1].to_float(), args[2].to_float())
+		return null
+
+	# Vector4(x,y,z,w)
+	if text.begins_with("Vector4(") and text.ends_with(")"):
+		var args = text.substr(8, text.length() - 9).split(",")
+		if args.size() == 4:
+			return Vector4(
+				args[0].to_float(),
+				args[1].to_float(),
+				args[2].to_float(),
+				args[3].to_float()
+			)
+		return null
+
+	# ======= Avaliar literais simples com Expression =======
+	var expr := Expression.new()
+	var err := expr.parse(text)
+	if err == OK:
+		var res := expr.execute([debug_target], null)
+		if not expr.has_execute_failed():
+			return res
+
+	# ======= Fallback opcional para prefixos antigos =======
+	if text.begins_with("String:"):
+		return text.replace("String:", "")
+	if text.begins_with("int:"):
+		return int(text.replace("int:", ""))
+	if text.begins_with("float:"):
+		return float(text.replace("float:", ""))
+	if text.begins_with("bool:"):
+		var v := text.replace("bool:", "")
+		if v == "true":
+			return true
+		if v == "false":
+			return false
+		return null
+
+	return null
+
+
+func _parse_method_args(text: String) -> Array:
+	var args: Array = []
+	var current := ""
+	var depth := 0
+
+	for c in text:
+		if c == "(":
+			depth += 1
+		elif c == ")":
+			depth -= 1
+		elif c == "," and depth == 0:
+			args.append(current.strip_edges())
+			current = ""
+			continue
+		current += c
+
+	if current.strip_edges() != "":
+		args.append(current.strip_edges())
+
+	# agora processa cada argumento
+	for i in range(args.size()):
+		var parsed := _parse_param(args[i])
+		if parsed == null:
+			parsed = _resolve_expression(debug_target, args[i])
+		if parsed == null:
+			push_warning("Invalid param: %s" % args[i])
+			continue
+		args[i] = parsed
+
+	return args
+
+
+func _format_value(v: Variant) -> String:
 	match typeof(v):
 		TYPE_FLOAT:
 			return _format_float(v, floats_decimal_places)
@@ -366,7 +476,312 @@ func _format_vector4(v: Vector4, decimals: int) -> String:
 	]
 
 
-func is_development() -> bool:
+func _is_array_index(part: String) -> bool:
+	return part.contains("[") and part.ends_with("]")
+
+
+func _is_method_call(part: String) -> bool:
+	return part.contains("(") and part.ends_with(")")
+
+
+func _resolve_expression(base: Variant, expression: String) -> Variant:
+	var parts := expression.split(".")
+	var current: Variant = base
+
+	for part in parts:
+		current = _resolve_part(current, part)
+		if current == null:
+			return null
+
+	return current
+
+
+func _resolve_part(current: Variant, part: String) -> Variant:
+	if current == null:
+		return null
+
+	if _is_array_index(part):
+		return _resolve_index(current, part)
+
+	if _is_method_call(part):
+		return _resolve_method_call(current, part)
+
+	if current is Object:
+		return _resolve_object_member(current, part)
+
+	return _resolve_builtin(current, part)
+
+
+func _resolve_index(current: Variant, part: String) -> Variant:
+	var open := part.find("[")
+	var base_part := part.substr(0, open)
+	var col := part.substr(open + 1, part.length() - open - 2)
+	var index := part.substr(open + 1, part.length() - open - 2).to_int()
+
+	if base_part != "":
+		current = _resolve_part(current, base_part)
+		if current == null:
+			return null
+
+	if current is Array:
+		if index < 0 or index >= current.size():
+			# push_warning("Array index out of bounds: %d" % index)
+			return null
+		return current[index]
+
+	if current is Dictionary:
+		if not current.has(col):
+			# push_warning("Dictionary key not found: %s" % col)
+			return null
+		return current[col]
+
+	push_warning("Indexing supported only on Array")
+	return null
+
+
+func _resolve_method_call(current: Variant, part: String) -> Variant:
+	var name := part.substr(0, part.find("("))
+	var params_text := part.substr(part.find("(") + 1, part.length() - part.find("(") - 2)
+
+	if not_allowed_methods.has(name):
+		push_warning("Method not allowed: %s" % name)
+		return null
+
+	var args := _parse_method_args(params_text)
+	if args == null:
+		return null
+
+	if current is Object and current.has_method(name):
+		return current.callv(name, args)
+
+	match typeof(current):
+		TYPE_VECTOR2:
+			return _call_vector2_method(current, name, args)
+		TYPE_VECTOR3:
+			return _call_vector3_method(current, name, args)
+		TYPE_VECTOR4:
+			return _call_vector4_method(current, name, args)
+		TYPE_BASIS:
+			return _call_basis_method(current, name, args)
+		TYPE_DICTIONARY:
+			return _call_dictionary_method(current, name, args)
+
+	#push_warning("Method not found: %s" % name)
+	return null
+
+
+func _resolve_object_member(obj: Object, part: String) -> Variant:
+	if part in obj:
+		return obj.get(part)
+
+	var getter := "get_" + part
+	if obj.has_method(getter):
+		return obj.call(getter)
+
+	#push_warning("Property not found: %s" % part)
+	return null
+
+
+func _resolve_builtin(value: Variant, part: String) -> Variant:
+	match typeof(value):
+		TYPE_VECTOR2:
+			return _resolve_vector2(value, part)
+		TYPE_VECTOR3:
+			return _resolve_vector3(value, part)
+		TYPE_VECTOR4:
+			return _resolve_vector4(value, part)
+		TYPE_TRANSFORM3D:
+			return _resolve_transform3d(value, part)
+		TYPE_BASIS:
+			return _resolve_basis(value, part)
+		TYPE_ARRAY:
+			return _resolve_array(value, part)
+		TYPE_DICTIONARY:
+			return _resolve_dictionary(value, part)
+
+	#push_warning("Cannot resolve part: %s" % part)
+	return null
+
+
+func _resolve_vector2(v: Vector2, part: String) -> Variant:
+	match part:
+		"x": return v.x
+		"y": return v.y
+		"length": return v.length()
+		"length_squared": return v.length_squared()
+		"normalized": return v.normalized()
+	return null
+
+
+func _resolve_vector3(v: Vector3, part: String) -> Variant:
+	match part:
+		"x": return v.x
+		"y": return v.y
+		"z": return v.z
+		"length": return v.length()
+		"length_squared": return v.length_squared()
+		"normalized": return v.normalized()
+	return null
+
+
+func _resolve_vector4(v: Vector4, part: String) -> Variant:
+	match part:
+		"x": return v.x
+		"y": return v.y
+		"z": return v.z
+		"w": return v.w
+		"length": return v.length()
+	return null
+
+
+func _resolve_transform3d(t: Transform3D, part: String) -> Variant:
+	match part:
+		"origin":
+			return t.origin
+		"basis":
+			return t.basis
+	return null
+
+
+func _resolve_basis(b: Basis, part: String) -> Variant:
+	match part:
+		"x":
+			return b.x
+		"y":
+			return b.y
+		"z":
+			return b.z
+	return null
+
+
+func _resolve_array(arr: Array, part: String) -> Variant:
+	match part:
+		"size":
+			return arr.size()
+		"length":
+			return arr.size() # alias opcional
+	return null
+
+
+func _resolve_dictionary(d: Dictionary, part: String) -> Variant:
+	match part:
+		"size":
+			return d.size()
+		"length":
+			return d.size() # alias opcional
+	return null
+
+
+func _call_vector2_method(v: Vector2, name: String, args: Array) -> Variant:
+	match name:
+		"dot":
+			if args.size() != 1 or not (args[0] is Vector2):
+				return null
+			return v.dot(args[0])
+		"distance_to":
+			if args.size() != 1 or not (args[0] is Vector2):
+				return null
+			return v.distance_to(args[0])
+		"angle_to":
+			if args.size() != 1 or not (args[0] is Vector2):
+				return null
+			return v.angle_to(args[0])
+		"normalized":
+			if args.size() != 0:
+				return null
+			return v.normalized()
+		"length":
+			if args.size() != 0:
+				return null
+			return v.length()
+		"length_squared":
+			if args.size() != 0:
+				return null
+			return v.length_squared()
+		_:
+			return null
+
+
+func _call_vector3_method(v: Vector3, name: String, args: Array) -> Variant:
+	match name:
+		"dot":
+			if args.size() != 1 or not (args[0] is Vector3):
+				return null
+			return v.dot(args[0])
+		"cross":
+			if args.size() != 1 or not (args[0] is Vector3):
+				return null
+			return v.cross(args[0])
+		"distance_to":
+			if args.size() != 1 or not (args[0] is Vector3):
+				return null
+			return v.distance_to(args[0])
+		"angle_to":
+			if args.size() != 1 or not (args[0] is Vector3):
+				return null
+			return v.angle_to(args[0])
+		"direction_to":
+			if args.size() != 1 or not (args[0] is Vector3):
+				return null
+			return v.direction_to(args[0])
+		"normalized":
+			if args.size() != 0:
+				return null
+			return v.normalized()
+		"length":
+			if args.size() != 0:
+				return null
+			return v.length()
+		"length_squared":
+			if args.size() != 0:
+				return null
+			return v.length_squared()
+		_:
+			return null
+
+
+func _call_vector4_method(v: Vector4, name: String, args: Array) -> Variant:
+	match name:
+		"dot":
+			if args.size() != 1 or not (args[0] is Vector4):
+				return null
+			return v.dot(args[0])
+		"length":
+			if args.size() != 0:
+				return null
+			return v.length()
+		"length_squared":
+			if args.size() != 0:
+				return null
+			return v.length_squared()
+		_:
+			return null
+
+
+func _call_basis_method(b: Basis, name: String, args: Array) -> Variant:
+	if args.size() > 0:
+		return null
+
+	match name:
+		"x": return b.x
+		"y": return b.y
+		"z": return b.z
+	return null
+
+
+func _call_dictionary_method(d: Dictionary, name: String, args: Array) -> Variant:
+	match name:
+		"get":
+			if args.size() != 1:
+				return null
+			return d.get(args[0])
+	return null
+
+#endregion
+
+
+#region PRIVATE METHODS
+func _is_development() -> bool:
 	if not Engine.is_editor_hint() and not OS.is_debug_build():
 		set_process(false)
 		set_physics_process(false)
