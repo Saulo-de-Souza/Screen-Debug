@@ -47,7 +47,7 @@ quick_expressions = {
     "Position": "position",
     "Velocity": "velocity",
     "Speed": "velocity.length()",
-    "Forward Distance": "position.distance_to(Vector3:10,0,5)",
+    "Forward Distance": "position.distance_to(Vector3(10,0,5))",
     "Direction to Target": "position.direction_to(get_node('Target').position)"
 }
 ```
@@ -58,7 +58,7 @@ quick_expressions = {
 expressions = [
     ScreenDebugExpression.new("First Child Name", "get_children()[0].name"),
     ScreenDebugExpression.new("Weapon Damage", "get_node('Weapon').damage"),
-    ScreenDebugExpression.new("Dot Product Velocity", "velocity.dot(Vector3:1,0,0)"),
+    ScreenDebugExpression.new("Dot Product Velocity", "velocity.dot(Vector3(1,0,0))"),
     ScreenDebugExpression.new("Inventory First Item", "inventory[0].name"),
     ScreenDebugExpression.new("Armor Defense", "equipment.get('Armor').defense"),
     ScreenDebugExpression.new("Distance To Target", "get_node('Target').position.distance_to(position)"),
@@ -91,10 +91,10 @@ inventory[2]
 ```gdscript
 velocity.length()        # Returns speed
 velocity.normalized()    # Returns unit vector
-velocity.dot(Vector3:1,0,0)
-velocity.cross(Vector3:0,1,0)
-velocity.distance_to(Vector3:5,0,0)
-velocity.angle_to(Vector3:0,0,1)
+velocity.dot(Vector3(1,0,0))
+velocity.cross(Vector3(0,1,0))
+velocity.distance_to(Vector3(5,0,0))
+velocity.angle_to(Vector3(0,0,1))
 position.direction_to(get_node('Target').position)
 ```
 
