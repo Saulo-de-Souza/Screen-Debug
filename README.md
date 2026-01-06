@@ -1,6 +1,6 @@
 # ScreenDebug Plugin for Godot 4.5
 
-![ScreenDebug Icon](res://addons/screen_debug/icon.svg)
+![ScreenDebug Icon](screenshots/icon_400.png)
 
 ## Overview
 
