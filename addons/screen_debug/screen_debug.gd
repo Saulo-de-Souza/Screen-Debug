@@ -2,8 +2,10 @@
 @icon("res://addons/screen_debug/icon.svg")
 
 
-## ScreenDebug
-## Displays a runtime debug overlay for inspecting properties and calling methods.
+## ScreenDebug is a professional runtime debug overlay for Godot 4.5 that allows developers to inspect node properties, call methods, and visualize real-time values directly on the screen.[br][br] 
+## It is designed to help both debugging and learning the Godot engine by showing the effects of property changes instantly. [br][br]
+## The plugin supports complex expressions including method calls, array and dictionary access, vector calculations, and chained expressions.[br][br]
+## It's particularly useful for character debugging, physics testing, and understanding how nodes interact in your scene.[br]
 class_name ScreenDebug extends CanvasLayer
 
 
