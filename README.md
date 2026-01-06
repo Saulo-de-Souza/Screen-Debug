@@ -41,6 +41,8 @@ Assume we have a **CharacterBody3D** node called `Player` with properties:
 
 ### Quick Expressions
 
+!["quick expressions"](screenshots/2.0/2.gif)
+
 ```gdscript
 quick_expressions = {
     "Health": "health",
@@ -53,6 +55,8 @@ quick_expressions = {
 ```
 
 ### Expressions (Longer Examples)
+
+!["expressions"](screenshots/2.0/1.gif)
 
 ```gdscript
 expressions = [
@@ -173,3 +177,13 @@ ScreenDebug is not only a debugging tool but also an **educational resource**:
 ---
 
 **ScreenDebug** is the ultimate runtime debug and learning tool for Godot 4.5 developers.
+
+---
+
+## ❤️ Support
+
+### If this project helped you, please consider supporting it:
+
+Github Sponsors: https://github.com/sponsors/Saulo-de-Souza
+
+Paypal: https://www.paypal.com/donate/?hosted_button_id=G24W4KL9ALH64
