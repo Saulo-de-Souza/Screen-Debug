@@ -307,6 +307,9 @@ func _handle_expressions() -> void:
 		if not expr_data:
 			continue
 
+		if not expr_data.visible:
+			continue
+			
 		var key := expr_data.label
 		var expr := expr_data.expression
 

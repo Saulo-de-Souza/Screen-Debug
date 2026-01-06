@@ -1,6 +1,8 @@
 @tool
 class_name ScreenDebugExpression extends Resource
 
+@export var visible: bool = true
+
 @export var label: String
 
 @export_multiline var expression: String
