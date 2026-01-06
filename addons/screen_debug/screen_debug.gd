@@ -415,7 +415,7 @@ func _parse_method_args(text: String) -> Array:
 		if parsed == null:
 			parsed = _resolve_expression(debug_target, args[i])
 		if parsed == null:
-			push_warning("Invalid param: %s" % args[i])
+			#push_warning("Invalid param: %s" % args[i])
 			continue
 		args[i] = parsed
 
@@ -535,7 +535,7 @@ func _resolve_index(current: Variant, part: String) -> Variant:
 			return null
 		return current[col]
 
-	push_warning("Indexing supported only on Array")
+	#push_warning("Indexing supported only on Array")
 	return null
 
 
@@ -544,7 +544,7 @@ func _resolve_method_call(current: Variant, part: String) -> Variant:
 	var params_text := part.substr(part.find("(") + 1, part.length() - part.find("(") - 2)
 
 	if not_allowed_methods.has(name):
-		push_warning("Method not allowed: %s" % name)
+		#push_warning("Method not allowed: %s" % name)
 		return null
 
 	var args := _parse_method_args(params_text)
