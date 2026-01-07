@@ -180,6 +180,12 @@ ScreenDebug is not only a debugging tool but also an **educational resource**:
 
 !["quick expressions"](screenshots/2.0/2.gif)
 
+---
+
+Watch the video: https://www.youtube.com/watch?v=z_mZbfBwWQU
+
+---
+
 ## !["expressions"](screenshots/2.0/1.gif)
 
 ## ❤️ Support
