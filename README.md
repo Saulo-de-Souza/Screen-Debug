@@ -174,19 +174,15 @@ ScreenDebug is not only a debugging tool but also an **educational resource**:
 
 **ScreenDebug** is the ultimate runtime debug and learning tool for Godot 4.5 developers.
 
----
-
----
-
 !["quick expressions"](screenshots/2.0/2.gif)
+
+!["expressions"](screenshots/2.0/1.gif)
 
 ---
 
 Watch the video: https://www.youtube.com/watch?v=z_mZbfBwWQU
 
 ---
-
-## !["expressions"](screenshots/2.0/1.gif)
 
 ## ❤️ Support
 
