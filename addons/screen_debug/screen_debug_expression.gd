@@ -1,4 +1,7 @@
 @tool
+@icon("res://addons/screen_debug/icon.svg")
+
+## Resource for creating a new expression to be used with the Screen Debug node.
 class_name ScreenDebugExpression extends Resource
 
 ## Turns visibility on or off.
